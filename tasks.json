@@ -1,0 +1,6 @@
+[
+  { "id": "task-1", "title": "Conduct Q3 Market Analysis", "assignee": "Muse-1", "status": "completed", "priority": "high" },
+  { "id": "task-2", "title": "Formulate Go-To-Market & Brand Teaser", "assignee": "Muse-2", "status": "in-progress", "priority": "medium" },
+  { "id": "task-3", "title": "Architect Scalable Multi-Tenant Backend", "assignee": "Muse-3", "status": "in-progress", "priority": "high" },
+  { "id": "task-4", "title": "Draft Operational Budget & Risk Matrix", "assignee": "Muse-4", "status": "pending", "priority": "critical" }
+]

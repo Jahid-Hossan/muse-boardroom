@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  muse-ceo:
+    build: .
+    container_name: muse-ceo-command
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      - ./profiles:/app/profiles
+      - ./config.json:/app/config.json
+      - ./messages.json:/app/messages.json
+      - ./tasks.json:/app/tasks.json

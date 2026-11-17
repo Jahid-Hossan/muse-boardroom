@@ -1,0 +1,22 @@
+{
+  "name": "muse-ceo-command",
+  "version": "1.0.0",
+  "description": "Multi-Agent Executive Command Center for 4 Muse AI Accounts",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "muse",
+    "ai",
+    "multi-agent",
+    "ceo",
+    "group-chat"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer-core": "^25.17.0"
+  }
+}
