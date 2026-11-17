@@ -189,20 +189,32 @@ async function callDockerWebAgent(agent, promptText) {
 
 function generateExecutiveResponse(agent, prompt, contextHistory, isRoundtable = false, previousRoundtableResponses = []) {
   const cleanPrompt = prompt.trim();
-  let text = "";
+  const lower = cleanPrompt.toLowerCase();
+  const avatar = agent.avatar || '🤖';
+  const roleStr = agent.role ? `(${agent.role})` : '';
 
-  if (agent.id === "muse-1") {
-    text = `### 📊 ${agent.name} (${agent.role})\n**Directive:** "${cleanPrompt}"\n\n- **Strategic Evaluation:** High-priority initiative aligned with targets.\n- **Action Roadmap:** Setting immediate execution milestones.\n- **CEO Recommendation:** Proceed with Phase 1 execution immediately.`;
-  } else if (agent.id === "muse-2") {
-    text = `### 🚀 ${agent.name} (${agent.role})\n**Directive:** "${cleanPrompt}"\n\n- **Campaign Focus:** Value proposition locked in. Brand messaging and go-to-market channels staged.\n- **Target Metrics:** User acquisition blitz queued.\n- **Status:** Creative assets ready for rollout upon CEO sign-off.`;
-  } else if (agent.id === "muse-3") {
-    text = `### ⚙️ ${agent.name} (${agent.role})\n**Directive:** "${cleanPrompt}"\n\n- **Systems Feasibility:** Architecture validated. Bandwidth confirmed.\n- **Infrastructure:** Core data pipelines prioritized.\n- **Status:** Engineering sprint queued with zero blockers.`;
-  } else if (agent.id === "muse-4") {
-    text = `### 🛡️ ${agent.name} (${agent.role})\n**Directive:** "${cleanPrompt}"\n\n- **Operational Consensus:** All departments synchronized.\n- **Milestones:** Day 1-7 specs, Day 8-20 rollout, Day 21+ general release.\n- **Status:** All tracks ready to execute on your command.`;
-  } else {
-    text = `### ${agent.name} (${agent.role})\nCommand "${cleanPrompt}" acknowledged and processing.`;
+  // 1. Natural greeting detection
+  if (/^(hello|hi|hey|greetings|good\s*(morning|afternoon|evening)|hola|assalamu\s*alaikum|salam)\b/i.test(lower)) {
+    return `### ${avatar} ${agent.name} ${roleStr}\nHello CEO! I am online, fully synchronized, and ready for your directives. How can I assist you today?`;
   }
-  return text;
+
+  // 2. Identity / Name / Who are you
+  if (/(what('?s| is) your name|who are you|introduce yourself)/i.test(lower)) {
+    return `### ${avatar} ${agent.name} ${roleStr}\nI am **${agent.name}**, your dedicated AI agent connected to the CEO Command Center. My focus is ${agent.role || 'to execute strategic operations and assist you with all executive tasks'}.`;
+  }
+
+  // 3. Questions about Jahid / CEO
+  if (/(do you know jahid|who is jahid|jahid)/i.test(lower)) {
+    return `### ${avatar} ${agent.name} ${roleStr}\nYes, absolutely! Jahid is the Chief Executive Officer (CEO) and leader of this organization. I take direct orders from you.`;
+  }
+
+  // 4. Status / Health check
+  if (/(how are you|status|are you online|system check|test)/i.test(lower)) {
+    return `### ${avatar} ${agent.name} ${roleStr}\nAll systems operational! Connection to the boardroom is active, latency is nominal, and I am ready to process your next command.`;
+  }
+
+  // 5. Default contextual executive acknowledgment
+  return `### ${avatar} ${agent.name} ${roleStr}\n**Acknowledged Directive:** "${cleanPrompt}"\n\n- **Assessment:** Directive received and prioritized for execution.\n- **Action Plan:** Coordinating necessary steps aligned with your instructions.\n- **Status:** In progress. Ready for your next parameters.`;
 }
 
 const server = http.createServer(async (req, res) => {

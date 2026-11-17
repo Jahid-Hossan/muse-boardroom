@@ -63,13 +63,26 @@ export async function launchAccountBrowser(accountId, headless = true) {
     } catch (e) {}
   }
 
+  const num = parseInt(accountId.replace(/[^0-9]/g, '') || '1');
+  const port = 9220 + num;
+
+  // 1. First attempt to connect to already running instance via CDP
+  try {
+    const browser = await puppeteer.connect({ browserURL: `http://127.0.0.1:${port}` });
+    activeBrowsers[accountId] = browser;
+    console.log(`[Browser] Connected to active Chrome on port ${port} for ${accountId}`);
+    return browser;
+  } catch (e) {
+    // Not running or cannot connect yet
+  }
+
   const profileDir = resolveProfileDir(accountId);
   try {
     const lockfile = path.join(profileDir, 'lockfile');
     if (fs.existsSync(lockfile)) fs.unlinkSync(lockfile);
   } catch (e) {}
 
-  console.log(`[Browser] Launching account ${accountId} with profile dir: ${profileDir}`);
+  console.log(`[Browser] Launching account ${accountId} on port ${port} with profile dir: ${profileDir}`);
 
   const browser = await puppeteer.launch({
     executablePath: getBrowserExecutable(),
@@ -78,6 +91,7 @@ export async function launchAccountBrowser(accountId, headless = true) {
     defaultViewport: null,
     timeout: 3000,
     args: [
+      `--remote-debugging-port=${port}`,
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--window-size=1000,700',
