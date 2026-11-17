@@ -188,10 +188,15 @@ async function callDockerWebAgent(agent, promptText) {
 }
 
 function generateExecutiveResponse(agent, prompt, contextHistory, isRoundtable = false, previousRoundtableResponses = []) {
-  const cleanPrompt = prompt.trim();
+  const cleanPrompt = prompt.replace(/^@[\w.-]+\s*/i, '').trim();
   const lower = cleanPrompt.toLowerCase();
   const avatar = agent.avatar || '🤖';
   const roleStr = agent.role ? `(${agent.role})` : '';
+
+  // Capabilities / What can you do
+  if (/(what can you do|capabilities|help|how can you help|features|what do you do)/i.test(lower)) {
+    return `### ${avatar} ${agent.name} ${roleStr}\nAs your AI Agent in the CEO Command Center, I can:\n- **Execute Operational Directives:** Analyze data, coordinate plans, and draft executive summaries.\n- **Multimodal Vision:** Inspect and analyze attached screenshots, diagrams, and files.\n- **Live AI Processing:** Route commands through connected models (Gemini API, OpenAI, Docker webhooks, or live browser sessions).\n- **Group & Direct Collaboration:** Coordinate with all accounts in the boardroom or chat 1-on-1 with you privately.\n\nTell me what you'd like to work on!`;
+  }
 
   // 1. Natural greeting detection
   if (/^(hello|hi|hey|greetings|good\s*(morning|afternoon|evening)|hola|assalamu\s*alaikum|salam)\b/i.test(lower)) {
@@ -228,6 +233,53 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') {
     res.writeHead(204);
     res.end();
+    return;
+  }
+
+  // Test connection to Docker Web URL
+  if (pathname === '/api/test-docker' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { url } = JSON.parse(body || '{}');
+        if (!url) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'URL is required' }));
+          return;
+        }
+        const resp = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(5000) });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, status: resp.status, statusText: resp.statusText }));
+      } catch (err) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // Open / Launch desktop browser window for account
+  if (pathname === '/api/open-browser' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', async () => {
+      try {
+        const { accountId, targetUrl } = JSON.parse(body || '{}');
+        const agent = config.accounts.find(a => a.id === accountId) || { id: accountId || 'muse-1', name: 'Browser' };
+        const { launchAccountBrowser } = await import('./browser-orchestrator.js');
+        const browser = await launchAccountBrowser(agent.id, false);
+        const pages = await browser.pages();
+        const page = pages.length > 0 ? pages[0] : await browser.newPage();
+        const urlToOpen = targetUrl || agent.customUrl || 'https://muse.ai';
+        page.goto(urlToOpen, { waitUntil: 'domcontentloaded' }).catch(() => {});
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: `Browser launched for ${agent.name}` }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
     return;
   }
 

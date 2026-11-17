@@ -31,22 +31,29 @@ function getBrowserExecutable() {
   throw new Error("No Chrome or Chromium browser executable found.");
 }
 
+function getPortForAccount(accountId) {
+  let hash = 0;
+  const str = String(accountId || 'muse-1');
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) & 0xFFFF;
+  }
+  return 9222 + (Math.abs(hash) % 500); // Always valid port between 9222 and 9721
+}
+
 function resolveProfileDir(accountId) {
-  // Map muse-1 -> profile1, muse-2 -> profile2, etc.
-  const num = accountId.replace(/[^0-9]/g, '') || '1';
-  const folderName = `profile${num}`;
+  const str = String(accountId || 'muse-1');
+  const m = str.match(/(?:profile|muse)[-_]?([1-4])/i);
+  const folderName = m ? `profile${m[1]}` : `profile_${str.replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   const candidates = [
     path.join(__dirname, 'profiles', folderName),
-    path.join("C:\\Users\\Jahid\\Desktop\\muse\\profiles", folderName),
-    path.join(__dirname, 'profiles', `profile_${accountId}`)
+    path.join("C:\\Users\\Jahid\\Desktop\\muse\\profiles", folderName)
   ];
 
   for (const dir of candidates) {
     if (fs.existsSync(dir)) return dir;
   }
 
-  // Create default if not found
   const fallback = candidates[0];
   fs.mkdirSync(fallback, { recursive: true });
   return fallback;
@@ -63,8 +70,7 @@ export async function launchAccountBrowser(accountId, headless = true) {
     } catch (e) {}
   }
 
-  const num = parseInt(accountId.replace(/[^0-9]/g, '') || '1');
-  const port = 9220 + num;
+  const port = getPortForAccount(accountId);
 
   // 1. First attempt to connect to already running instance via CDP
   try {
@@ -89,7 +95,7 @@ export async function launchAccountBrowser(accountId, headless = true) {
     headless: false,
     userDataDir: profileDir,
     defaultViewport: null,
-    timeout: 3000,
+    timeout: 5000,
     args: [
       `--remote-debugging-port=${port}`,
       '--no-sandbox',
@@ -118,9 +124,13 @@ export async function queryLiveMuseAccount(account, promptText) {
     const pages = await browser.pages();
     const page = pages.length > 0 ? pages[0] : await browser.newPage();
 
+    const targetUrl = account.customUrl && account.customUrl.trim() ? account.customUrl.trim() : 'https://muse.ai';
     const currentUrl = page.url();
-    if (!currentUrl.includes('muse.ai')) {
-      await page.goto('https://muse.ai', { waitUntil: 'domcontentloaded', timeout: 4000 });
+    let hostname = 'muse.ai';
+    try { hostname = new URL(targetUrl).hostname; } catch(e){}
+
+    if (!currentUrl.includes(hostname)) {
+      await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 5000 }).catch(() => {});
     }
 
     // Try multiple common input selectors
