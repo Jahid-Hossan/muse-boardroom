@@ -64,17 +64,26 @@ export async function launchAccountBrowser(accountId, headless = true) {
   }
 
   const profileDir = resolveProfileDir(accountId);
+  try {
+    const lockfile = path.join(profileDir, 'lockfile');
+    if (fs.existsSync(lockfile)) fs.unlinkSync(lockfile);
+  } catch (e) {}
+
   console.log(`[Browser] Launching account ${accountId} with profile dir: ${profileDir}`);
 
   const browser = await puppeteer.launch({
     executablePath: getBrowserExecutable(),
-    headless: false, // User wants to see real browser action!
+    headless: false,
     userDataDir: profileDir,
     defaultViewport: null,
+    timeout: 3000,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
-      '--window-size=1000,700'
+      '--window-size=1000,700',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--no-first-run'
     ]
   });
 
@@ -97,7 +106,7 @@ export async function queryLiveMuseAccount(account, promptText) {
 
     const currentUrl = page.url();
     if (!currentUrl.includes('muse.ai')) {
-      await page.goto('https://muse.ai', { waitUntil: 'networkidle2', timeout: 30000 });
+      await page.goto('https://muse.ai', { waitUntil: 'domcontentloaded', timeout: 4000 });
     }
 
     // Try multiple common input selectors
@@ -111,7 +120,7 @@ export async function queryLiveMuseAccount(account, promptText) {
     let inputEl = null;
     for (const sel of inputSelectors) {
       try {
-        await page.waitForSelector(sel, { timeout: 3000 });
+        await page.waitForSelector(sel, { timeout: 800 });
         inputEl = await page.$(sel);
         if (inputEl) break;
       } catch (e) {}
@@ -119,9 +128,9 @@ export async function queryLiveMuseAccount(account, promptText) {
 
     if (inputEl) {
       await inputEl.click();
-      await inputEl.type(promptText, { delay: 20 });
+      await inputEl.type(promptText, { delay: 0 });
       await page.keyboard.press('Enter');
-      await new Promise(r => setTimeout(r, 4000));
+      await new Promise(r => setTimeout(r, 600));
     }
 
     // Grab latest output

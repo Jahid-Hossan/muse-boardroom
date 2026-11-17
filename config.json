@@ -11,7 +11,12 @@
       "avatar": "📊",
       "status": "online",
       "provider": "browser-automation",
-      "profileDir": "profile1"
+      "profileDir": "profile1",
+      "systemPrompt": "",
+      "customUrl": "",
+      "apiKey": "",
+      "model": "gpt-4o-mini",
+      "endpoint": ""
     },
     {
       "id": "muse-2",

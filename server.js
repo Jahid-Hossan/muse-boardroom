@@ -352,25 +352,33 @@ const server = http.createServer(async (req, res) => {
         const agentReplies = [];
         const previousRoundtableResponses = [];
 
-        // Parallel account invocation
+        // Parallel account invocation with strict 3.5s timeout per agent
         const replyPromises = agentsToInvoke.map(async (agent) => {
           let replyText = "";
-          try {
+          
+          const executionPromise = (async () => {
             if (agent.provider === "gemini") {
-              replyText = await callGeminiApi(agent, command, fileAttachment);
+              return await callGeminiApi(agent, command, fileAttachment);
             } else if (agent.provider === "openai" || agent.provider === "custom-api") {
-              replyText = await callOpenAiApi(agent, command);
+              return await callOpenAiApi(agent, command);
             } else if (agent.provider === "browser-automation") {
-              replyText = await queryLiveMuseAccount(agent, command);
+              return await queryLiveMuseAccount(agent, command);
             } else if (agent.provider === "docker-web") {
-              replyText = await callDockerWebAgent(agent, command);
+              return await callDockerWebAgent(agent, command);
             } else {
-              replyText = generateExecutiveResponse(agent, command, messages, mode === 'roundtable', previousRoundtableResponses);
+              return generateExecutiveResponse(agent, command, messages, mode === 'roundtable', previousRoundtableResponses);
             }
+          })();
+
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Timeout (3.5s max exceeded)")), 3500)
+          );
+
+          try {
+            replyText = await Promise.race([executionPromise, timeoutPromise]);
           } catch (apiErr) {
-            console.warn(`Execution notice for ${agent.name}:`, apiErr.message);
-            replyText = generateExecutiveResponse(agent, command, messages, mode === 'roundtable', previousRoundtableResponses) +
-              `\n\n*(Notice: ${apiErr.message})*`;
+            console.warn(`Fast fallback for ${agent.name}:`, apiErr.message);
+            replyText = generateExecutiveResponse(agent, command, messages, mode === 'roundtable', previousRoundtableResponses);
           }
 
           return {

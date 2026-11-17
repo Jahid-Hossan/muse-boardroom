@@ -484,6 +484,27 @@
       font-weight: 700;
     }
 
+    /* Typing Indicator */
+    .typing-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .typing-indicator span {
+      width: 6px;
+      height: 6px;
+      background: #f59e0b;
+      border-radius: 50%;
+      display: inline-block;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+    .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); opacity: 0.3; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
     /* Attachment Preview */
     .attachment-preview {
       display: none;
@@ -1213,45 +1234,93 @@
       feed.scrollTop = feed.scrollHeight;
     }
 
-    // Send Command
+    // Send Command with Instant Optimistic UI (0ms latency feedback)
     async function sendCommand() {
-      if (isSending) return;
       const input = document.getElementById('commandInput');
-      const sendBtn = document.getElementById('sendBtn');
-      const indicator = document.getElementById('statusIndicator');
-
       const text = input ? input.value.trim() : '';
       if (!text && !currentAttachment) return;
 
-      isSending = true;
-      if (sendBtn) sendBtn.disabled = true;
-      if (indicator) indicator.classList.add('active');
+      const userText = text || "Analyze attached file/screenshot.";
+      const pendingAttachment = currentAttachment;
+
+      // 1. Immediately clear input and attachments
+      if (input) input.value = '';
+      clearAttachment();
+
+      // 2. Optimistically render CEO message instantly (0ms)
+      const tempCeoMsg = {
+        id: `temp-ceo-${Date.now()}`,
+        sender: "ceo",
+        role: "Chief Executive Officer",
+        senderName: appConfig && appConfig.ceoName ? appConfig.ceoName : "CEO",
+        text: userText,
+        fileAttachment: pendingAttachment,
+        mode: currentView === 'direct' ? 'direct' : 'broadcast',
+        targetAgentId: currentView === 'direct' ? currentDirectAgentId : 'all',
+        timestamp: new Date().toISOString()
+      };
+      cachedMessages.push(tempCeoMsg);
+      renderMessages(cachedMessages);
+
+      // 3. Render instant animated thinking bubble
+      showThinkingBubble();
+
+      const payload = {
+        command: userText,
+        mode: currentView === 'direct' ? 'direct' : 'broadcast',
+        targetAgentId: currentView === 'direct' ? currentDirectAgentId : 'all',
+        fileAttachment: pendingAttachment
+      };
 
       try {
-        const payload = {
-          command: text || "Analyze attached file/screenshot.",
-          mode: currentView === 'direct' ? 'direct' : 'broadcast',
-          targetAgentId: currentView === 'direct' ? currentDirectAgentId : 'all',
-          fileAttachment: currentAttachment
-        };
-
         const res = await fetch('/api/command', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
-
-        if (input) input.value = '';
-        clearAttachment();
-        await loadMessages();
+        const data = await res.json();
       } catch (err) {
         console.error("Send error:", err);
       } finally {
-        isSending = false;
-        if (sendBtn) sendBtn.disabled = false;
-        if (indicator) indicator.classList.remove('active');
+        hideThinkingBubble();
+        await loadMessages();
         if (input) input.focus();
       }
+    }
+
+    function showThinkingBubble() {
+      const feed = document.getElementById('chatFeed');
+      if (!feed) return;
+      hideThinkingBubble();
+
+      const bubble = document.createElement('div');
+      bubble.id = 'thinkingBubble';
+      bubble.className = 'msg-card agent';
+      bubble.style.borderLeftColor = '#f59e0b';
+      bubble.style.background = 'rgba(245, 158, 11, 0.05)';
+      bubble.style.padding = '12px 16px';
+
+      const agent = (currentView === 'direct' && appConfig && appConfig.accounts)
+        ? appConfig.accounts.find(a => a.id === currentDirectAgentId)
+        : null;
+
+      const label = agent ? `${agent.name} is formulating response...` : `Accounts are processing your executive directive...`;
+
+      bubble.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="typing-indicator">
+            <span></span><span></span><span></span>
+          </div>
+          <span style="font-size: 13px; color: #f59e0b; font-weight: 600;">${label}</span>
+        </div>
+      `;
+      feed.appendChild(bubble);
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    function hideThinkingBubble() {
+      const bubble = document.getElementById('thinkingBubble');
+      if (bubble) bubble.remove();
     }
 
     // File Upload Handling
