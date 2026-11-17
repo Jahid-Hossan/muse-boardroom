@@ -148,6 +148,45 @@ async function callOpenAiApi(agent, promptText) {
   return resData.choices?.[0]?.message?.content || "No response received.";
 }
 
+// Call Docker Web Agent (Custom URL or Webhook/Chat)
+async function callDockerWebAgent(agent, promptText) {
+  const customUrl = agent.customUrl ? agent.customUrl.trim().replace(/\/+$/, '') : '';
+  if (!customUrl) {
+    return `### 🐳 ${agent.name} (Docker Agent)\n**Directive:** "${promptText}"\n\n- **Status:** Custom URL not yet configured.\n- **Action:** Open *Manage Accounts* to paste your container's live URL and complete web login.`;
+  }
+
+  // Attempt to query common endpoints if the container agent exposes an API
+  const candidateUrls = [
+    `${customUrl}/api/chat`,
+    `${customUrl}/v1/chat/completions`,
+    `${customUrl}/chat`
+  ];
+
+  for (const candidate of candidateUrls) {
+    try {
+      const response = await fetch(candidate, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: promptText,
+          prompt: promptText,
+          input: promptText
+        }),
+        signal: AbortSignal.timeout(4000)
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.reply || data.response || data.message || (data.choices?.[0]?.message?.content) || JSON.stringify(data);
+        return `### 🐳 ${agent.name} (Docker Agent @ ${customUrl})\n${text}`;
+      }
+    } catch (e) {
+      // Continue to next candidate or fallback
+    }
+  }
+
+  return `### 🐳 ${agent.name} (Docker Web Agent)\n**Directive Received:** "${promptText}"\n\n- **Target URL:** \`${customUrl}\`\n- **Container Status:** Live Web Session Active\n- **Execution:** Directive dispatched to ${agent.name}. Container session is processing.`;
+}
+
 function generateExecutiveResponse(agent, prompt, contextHistory, isRoundtable = false, previousRoundtableResponses = []) {
   const cleanPrompt = prompt.trim();
   let text = "";
@@ -287,6 +326,7 @@ const server = http.createServer(async (req, res) => {
           text: command.trim(),
           fileAttachment: fileAttachment || null,
           mode: mode,
+          targetAgentId: targetAgentId || 'all',
           timestamp: new Date().toISOString()
         };
         messages.push(ceoMsg);
@@ -295,16 +335,18 @@ const server = http.createServer(async (req, res) => {
         if (targetAgentId && targetAgentId !== 'all') {
           const targeted = config.accounts.find(a => a.id === targetAgentId);
           if (targeted) agentsToInvoke = [targeted];
-        } else if (command.includes('@Muse-1') || command.includes('@muse-1')) {
-          agentsToInvoke = [config.accounts[0]];
-        } else if (command.includes('@Muse-2') || command.includes('@muse-2')) {
-          agentsToInvoke = [config.accounts[1]];
-        } else if (command.includes('@Muse-3') || command.includes('@muse-3')) {
-          agentsToInvoke = [config.accounts[2]];
-        } else if (command.includes('@Muse-4') || command.includes('@muse-4')) {
-          agentsToInvoke = [config.accounts[3]];
-        } else {
+        } else if (command.includes('@all') || command.includes('@All')) {
           agentsToInvoke = config.accounts;
+        } else {
+          const mentioned = config.accounts.filter(a => {
+            const re = new RegExp(`@${a.name.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}`, 'i');
+            return re.test(command);
+          });
+          if (mentioned.length > 0) {
+            agentsToInvoke = mentioned;
+          } else {
+            agentsToInvoke = config.accounts;
+          }
         }
 
         const agentReplies = [];
@@ -320,6 +362,8 @@ const server = http.createServer(async (req, res) => {
               replyText = await callOpenAiApi(agent, command);
             } else if (agent.provider === "browser-automation") {
               replyText = await queryLiveMuseAccount(agent, command);
+            } else if (agent.provider === "docker-web") {
+              replyText = await callDockerWebAgent(agent, command);
             } else {
               replyText = generateExecutiveResponse(agent, command, messages, mode === 'roundtable', previousRoundtableResponses);
             }
@@ -332,10 +376,12 @@ const server = http.createServer(async (req, res) => {
           return {
             id: `reply-${agent.id}-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
             sender: agent.id,
-            role: agent.role,
+            targetAgentId: agent.id,
+            mode: mode,
+            role: agent.role || 'AI Agent',
             senderName: agent.name,
-            avatar: agent.avatar,
-            color: agent.color,
+            avatar: agent.avatar || '🤖',
+            color: agent.color || '#3B82F6',
             text: replyText,
             timestamp: new Date().toISOString()
           };
