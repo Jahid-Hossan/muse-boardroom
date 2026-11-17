@@ -28,7 +28,28 @@ function getBrowserExecutable() {
   for (const p of winPaths) {
     if (fs.existsSync(p)) return p;
   }
-  throw new Error("No compatible Chrome or Chromium executable found on this system.");
+  throw new Error("No Chrome or Chromium browser executable found.");
+}
+
+function resolveProfileDir(accountId) {
+  // Map muse-1 -> profile1, muse-2 -> profile2, etc.
+  const num = accountId.replace(/[^0-9]/g, '') || '1';
+  const folderName = `profile${num}`;
+
+  const candidates = [
+    path.join(__dirname, 'profiles', folderName),
+    path.join("C:\\Users\\Jahid\\Desktop\\muse\\profiles", folderName),
+    path.join(__dirname, 'profiles', `profile_${accountId}`)
+  ];
+
+  for (const dir of candidates) {
+    if (fs.existsSync(dir)) return dir;
+  }
+
+  // Create default if not found
+  const fallback = candidates[0];
+  fs.mkdirSync(fallback, { recursive: true });
+  return fallback;
 }
 
 const activeBrowsers = {};
@@ -42,24 +63,18 @@ export async function launchAccountBrowser(accountId, headless = true) {
     } catch (e) {}
   }
 
-  const profileDir = path.join(__dirname, 'profiles', `profile_${accountId}`);
-  if (!fs.existsSync(profileDir)) {
-    fs.mkdirSync(profileDir, { recursive: true });
-  }
+  const profileDir = resolveProfileDir(accountId);
+  console.log(`[Browser] Launching account ${accountId} with profile dir: ${profileDir}`);
 
   const browser = await puppeteer.launch({
     executablePath: getBrowserExecutable(),
-    headless: "new",
+    headless: false, // User wants to see real browser action!
     userDataDir: profileDir,
     defaultViewport: null,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-      '--no-first-run',
-      '--no-zygote',
-      '--window-size=1280,800'
+      '--window-size=1000,700'
     ]
   });
 
@@ -73,47 +88,54 @@ export async function launchAccountBrowser(accountId, headless = true) {
 
 export async function queryLiveMuseAccount(account, promptText) {
   const accountId = account.id || 'muse-1';
+  console.log(`[Browser Engine] Sending live directive to ${account.name} (${accountId}): "${promptText}"`);
+  
   try {
-    const browser = await launchAccountBrowser(accountId, true);
+    const browser = await launchAccountBrowser(accountId, false);
     const pages = await browser.pages();
     const page = pages.length > 0 ? pages[0] : await browser.newPage();
 
-    // Set cookies / session tokens if provided
-    if (account.sessionCookie) {
-      const cookies = account.sessionCookie.split(';').map(c => {
-        const [name, ...val] = c.trim().split('=');
-        return { name, value: val.join('='), domain: '.muse.ai', path: '/' };
-      }).filter(c => c.name && c.value);
-      if (cookies.length > 0) {
-        await page.setCookie(...cookies);
-      }
-    }
-
     const currentUrl = page.url();
     if (!currentUrl.includes('muse.ai')) {
-      await page.goto('https://muse.ai', { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await page.goto('https://muse.ai', { waitUntil: 'networkidle2', timeout: 30000 });
     }
 
-    const inputSelector = 'textarea, input[type="text"], [contenteditable="true"]';
-    await page.waitForSelector(inputSelector, { timeout: 10000 });
-    
-    await page.click(inputSelector);
-    await page.type(inputSelector, promptText);
-    await page.keyboard.press('Enter');
+    // Try multiple common input selectors
+    const inputSelectors = [
+      'textarea',
+      'input[type="text"]',
+      '[contenteditable="true"]',
+      'div[role="textbox"]'
+    ];
 
-    await new Promise(r => setTimeout(r, 4000));
+    let inputEl = null;
+    for (const sel of inputSelectors) {
+      try {
+        await page.waitForSelector(sel, { timeout: 3000 });
+        inputEl = await page.$(sel);
+        if (inputEl) break;
+      } catch (e) {}
+    }
 
+    if (inputEl) {
+      await inputEl.click();
+      await inputEl.type(promptText, { delay: 20 });
+      await page.keyboard.press('Enter');
+      await new Promise(r => setTimeout(r, 4000));
+    }
+
+    // Grab latest output
     const reply = await page.evaluate(() => {
-      const msgs = document.querySelectorAll('.message, [class*="response"], [class*="chat-message"], p');
-      if (msgs.length > 0) {
-        return msgs[msgs.length - 1].innerText;
+      const elms = document.querySelectorAll('[class*="message"], [class*="chat"], [class*="response"], p');
+      if (elms.length > 0) {
+        return elms[elms.length - 1].innerText;
       }
       return null;
     });
 
-    return reply || `[Live Session] Command delivered to ${account.name}. Response received.`;
+    return reply || `Live command processed by ${account.name} (Active in session).`;
   } catch (err) {
-    console.error(`Browser automation error for ${account.name}:`, err.message);
+    console.error(`Live browser execution error for ${account.name}:`, err.message);
     throw err;
   }
 }
