@@ -219,24 +219,20 @@
     <!-- RIGHT COLUMN: Tasks, Action Items & Strategy Presets -->
     <aside class="w-80 border-l border-slate-800/80 bg-[#0D111A] flex flex-col shrink-0 overflow-y-auto">
       
-      <!-- Executive Presets -->
+      <!-- Quick Controls -->
       <div class="p-4 border-b border-slate-800/80">
         <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5 flex items-center justify-between">
-          <span>⚡ Executive Presets</span>
-          <span class="text-[10px] text-amber-400">1-Click Run</span>
+          <span>⚙️ War Room Controls</span>
+          <button onclick="clearCommandInput()" class="text-[10px] text-amber-400 hover:text-amber-300">Clear Input</button>
         </h3>
-        <div class="space-y-1.5">
-          <button onclick="applyPreset('growth')" class="preset-btn w-full text-left p-2 rounded-lg bg-slate-900/70 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all text-xs">
-            <div class="font-semibold text-slate-200">🚀 10X Revenue Blitz Plan</div>
-            <div class="text-[11px] text-slate-400 truncate">Demand multi-channel expansion from all 4 roles</div>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="clearCommandInput()" class="p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 flex items-center justify-center gap-1.5 transition-all">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-amber-400"></i>
+            <span>Reset Input</span>
           </button>
-          <button onclick="applyPreset('crisis')" class="preset-btn w-full text-left p-2 rounded-lg bg-slate-900/70 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all text-xs">
-            <div class="font-semibold text-slate-200">🛡️ Crisis & Risk Audit</div>
-            <div class="text-[11px] text-slate-400 truncate">Identify system bottlenecks, churn & security risks</div>
-          </button>
-          <button onclick="applyPreset('product')" class="preset-btn w-full text-left p-2 rounded-lg bg-slate-900/70 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 transition-all text-xs">
-            <div class="font-semibold text-slate-200">💡 Disruptive Product Pivot</div>
-            <div class="text-[11px] text-slate-400 truncate">Spec architecture, viral hook, and rollout roadmap</div>
+          <button onclick="clearBoardroom()" class="p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-xs text-rose-300 flex items-center justify-center gap-1.5 transition-all">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5 text-rose-400"></i>
+            <span>Clear Chat</span>
           </button>
         </div>
       </div>

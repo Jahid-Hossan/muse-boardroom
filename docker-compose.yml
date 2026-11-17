@@ -10,8 +10,3 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-    volumes:
-      - ./profiles:/app/profiles
-      - ./config.json:/app/config.json
-      - ./messages.json:/app/messages.json
-      - ./tasks.json:/app/tasks.json

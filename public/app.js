@@ -292,6 +292,15 @@ function applyPreset(type) {
   input.focus();
 }
 
+// Clear command input box
+function clearCommandInput() {
+  const input = document.getElementById('commandInput');
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
+}
+
 // Clear War Room
 async function clearBoardroom() {
   if (!confirm("Are you sure you want to clear the War Room group chat history?")) return;
