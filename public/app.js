@@ -292,15 +292,6 @@ function applyPreset(type) {
   input.focus();
 }
 
-// Clear command input box
-function clearCommandInput() {
-  const input = document.getElementById('commandInput');
-  if (input) {
-    input.value = '';
-    input.focus();
-  }
-}
-
 // Clear War Room
 async function clearBoardroom() {
   if (!confirm("Are you sure you want to clear the War Room group chat history?")) return;
@@ -372,12 +363,16 @@ function openConfigModal(agentId = 'muse-1') {
   activeConfigAgentId = agentId;
   renderConfigModalTabs();
   renderConfigModalForm();
-  document.getElementById('configModal').classList.remove('hidden');
+  const modal = document.getElementById('configModal');
+  modal.style.display = 'flex';
+  modal.classList.remove('hidden');
   lucide.createIcons();
 }
 
 function closeConfigModal() {
-  document.getElementById('configModal').classList.add('hidden');
+  const modal = document.getElementById('configModal');
+  modal.style.display = 'none';
+  modal.classList.add('hidden');
 }
 
 function renderConfigModalTabs() {
