@@ -248,11 +248,29 @@
     .account-click-hint {
       font-size: 10px;
       color: #f59e0b;
-      margin-top: 6px;
       display: flex;
       align-items: center;
       gap: 4px;
       opacity: 0.8;
+    }
+    .btn-card-remove {
+      background: rgba(239, 68, 68, 0.12);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.15s ease;
+    }
+    .btn-card-remove:hover {
+      background: rgba(239, 68, 68, 0.25);
+      color: #fff;
+      border-color: #ef4444;
     }
     .status-pill {
       font-size: 9px;
@@ -1017,7 +1035,10 @@
             </div>
             ${agent.role ? `<div class="account-role">${agent.role}</div>` : ''}
             <div class="account-provider">${agent.provider === 'docker-web' ? (agent.customUrl ? 'URL Configured' : 'No URL Set') : (agent.profileDir || agent.model || agent.provider)}</div>
-            <div class="account-click-hint">💬 Chat 1-on-1</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+              <span class="account-click-hint">💬 Chat 1-on-1</span>
+              <button class="btn-card-remove" onclick="removeAccount(event, '${agent.id}')" title="Remove ${agent.name}">✕ Remove</button>
+            </div>
           </div>
         `;
         roster.appendChild(card);
@@ -1485,11 +1506,62 @@
       renderModalForm();
     }
 
-    function deleteCurrentAgent(agentId) {
-      if (!confirm(`Are you sure you want to remove this agent?`)) return;
+    async function removeAccount(e, agentId) {
+      if (e) e.stopPropagation();
+      const agent = appConfig.accounts.find(a => a.id === agentId);
+      if (!agent) return;
+      if (!confirm(`Are you sure you want to remove "${agent.name}" from active accounts?`)) return;
+
       appConfig.accounts = appConfig.accounts.filter(a => a.id !== agentId);
-      activeTabId = appConfig.accounts[0] ? appConfig.accounts[0].id : 'muse-1';
-      saveCurrentAccountConfig();
+      if (currentDirectAgentId === agentId) {
+        switchView('boardroom');
+      }
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(appConfig)
+        });
+        const data = await res.json();
+        if (data.success) {
+          await loadConfig();
+        }
+      } catch (err) {
+        console.error("Error removing account:", err);
+      }
+    }
+
+    async function deleteCurrentAgent(agentId) {
+      const agent = appConfig.accounts.find(a => a.id === agentId);
+      const name = agent ? agent.name : 'this agent';
+      if (!confirm(`Are you sure you want to remove "${name}" from active accounts?`)) return;
+
+      appConfig.accounts = appConfig.accounts.filter(a => a.id !== agentId);
+      activeTabId = appConfig.accounts[0] ? appConfig.accounts[0].id : '';
+      if (currentDirectAgentId === agentId) {
+        switchView('boardroom');
+      }
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(appConfig)
+        });
+        const data = await res.json();
+        if (data.success) {
+          renderModalTabs();
+          if (activeTabId) {
+            renderModalForm();
+          } else {
+            closeConfigModal();
+          }
+          await loadConfig();
+        }
+      } catch (err) {
+        console.error("Config save error:", err);
+      }
     }
 
     function renderModalForm() {
@@ -1552,11 +1624,11 @@
           <textarea id="cfgPrompt" rows="3">${agent.systemPrompt || ''}</textarea>
         </div>
 
-        ${isCustomAgent ? `
-          <div style="padding-top: 6px;">
-            <button type="button" class="btn-danger" onclick="deleteCurrentAgent('${agent.id}')">🗑️ Remove This Agent</button>
-          </div>
-        ` : ''}
+        <div style="padding-top: 12px; border-top: 1px solid #1e293b; margin-top: 8px; display: flex; justify-content: flex-end;">
+          <button type="button" class="btn-danger" onclick="deleteCurrentAgent('${agent.id}')" style="display: flex; align-items: center; gap: 6px;">
+            🗑️ Remove ${agent.name}
+          </button>
+        </div>
       `;
     }
 
