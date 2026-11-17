@@ -1,19 +1,5 @@
 {
   "companyName": "CEO Command Center",
   "ceoName": "CEO",
-  "accounts": [
-    {
-      "id": "agent-1794926342771",
-      "name": "Muse-1",
-      "avatar": "🐳",
-      "color": "#06B6D4",
-      "status": "online",
-      "provider": "browser-automation",
-      "customUrl": "",
-      "systemPrompt": "You are an autonomous AI agent running in a Docker container.",
-      "apiKey": "",
-      "model": "gpt-4o-mini",
-      "endpoint": ""
-    }
-  ]
+  "accounts": []
 }

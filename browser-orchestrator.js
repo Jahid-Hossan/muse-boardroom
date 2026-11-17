@@ -70,9 +70,19 @@ export async function launchAccountBrowser(accountId, headless = true) {
     } catch (e) {}
   }
 
+  // 0. Priority: Attempt to connect to user's primary live Chrome on port 9222
+  try {
+    const mainBrowser = await puppeteer.connect({ browserURL: 'http://127.0.0.1:9222' });
+    console.log(`[Browser] Connected to user's primary live Chrome on port 9222!`);
+    activeBrowsers[accountId] = mainBrowser;
+    return mainBrowser;
+  } catch (e) {
+    // Port 9222 not open
+  }
+
   const port = getPortForAccount(accountId);
 
-  // 1. First attempt to connect to already running instance via CDP
+  // 1. Next attempt to connect to account-specific port via CDP
   try {
     const browser = await puppeteer.connect({ browserURL: `http://127.0.0.1:${port}` });
     activeBrowsers[accountId] = browser;
@@ -122,16 +132,23 @@ export async function queryLiveMuseAccount(account, promptText) {
   try {
     const browser = await launchAccountBrowser(accountId, false);
     const pages = await browser.pages();
-    const page = pages.length > 0 ? pages[0] : await browser.newPage();
-
+    
     const targetUrl = account.customUrl && account.customUrl.trim() ? account.customUrl.trim() : 'https://muse.ai';
-    const currentUrl = page.url();
     let hostname = 'muse.ai';
     try { hostname = new URL(targetUrl).hostname; } catch(e){}
 
-    if (!currentUrl.includes(hostname)) {
-      await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 5000 }).catch(() => {});
+    // Check if any open tab already has muse.ai open
+    let page = pages.find(p => p.url().includes(hostname));
+    if (!page) {
+      page = pages.length > 0 ? pages[0] : await browser.newPage();
+      if (!page.url().includes(hostname)) {
+        await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 5000 }).catch(() => {});
+      }
     }
+
+    try {
+      await page.bringToFront();
+    } catch (e) {}
 
     // Try multiple common input selectors
     const inputSelectors = [
