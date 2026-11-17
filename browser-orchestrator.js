@@ -136,37 +136,64 @@ export async function queryLiveMuseAccount(account, promptText) {
     // Try multiple common input selectors
     const inputSelectors = [
       'textarea',
-      'input[type="text"]',
+      'input[type="text"]:not([type="hidden"])',
       '[contenteditable="true"]',
-      'div[role="textbox"]'
+      'div[role="textbox"]',
+      '[placeholder*="Ask"]',
+      '[placeholder*="Message"]',
+      '[placeholder*="Chat"]'
     ];
 
     let inputEl = null;
     for (const sel of inputSelectors) {
       try {
-        await page.waitForSelector(sel, { timeout: 800 });
+        await page.waitForSelector(sel, { timeout: 600 });
         inputEl = await page.$(sel);
         if (inputEl) break;
       } catch (e) {}
     }
 
-    if (inputEl) {
-      await inputEl.click();
-      await inputEl.type(promptText, { delay: 0 });
-      await page.keyboard.press('Enter');
-      await new Promise(r => setTimeout(r, 600));
+    if (!inputEl) {
+      const isLoggedOut = await page.evaluate(() => {
+        return Array.from(document.querySelectorAll('button, a')).some(el => {
+          const t = (el.innerText || '').trim().toLowerCase();
+          return t === 'log in' || t === 'sign in';
+        });
+      });
+
+      if (isLoggedOut) {
+        return `⚠️ **Please Log In to Muse:**\n\nThe Chrome window is open at \`${targetUrl}\` on your computer. Please click **"Log in"** in that window to sign into your Muse account.\n\nOnce logged in, your session is permanently saved and your commands will process automatically!`;
+      }
+      return `⚠️ **Chat input not detected:** Please ensure you are logged into your Muse account in the open Chrome desktop window.`;
     }
 
-    // Grab latest output
+    await inputEl.click();
+    await inputEl.type(promptText, { delay: 0 });
+    await page.keyboard.press('Enter');
+    await new Promise(r => setTimeout(r, 1200));
+
+    // Grab latest output specifically from chat elements, ignoring footer/copyright
     const reply = await page.evaluate(() => {
-      const elms = document.querySelectorAll('[class*="message"], [class*="chat"], [class*="response"], p');
-      if (elms.length > 0) {
-        return elms[elms.length - 1].innerText;
+      const candidates = document.querySelectorAll(
+        '[class*="message"]:not(footer *):not([class*="footer"] *), ' +
+        '[class*="bubble"], ' +
+        '[class*="response"]:not(footer *), ' +
+        '[data-testid*="message"], ' +
+        '[role="log"] div, ' +
+        'article p'
+      );
+      if (candidates.length > 0) {
+        for (let i = candidates.length - 1; i >= 0; i--) {
+          const t = (candidates[i].innerText || '').trim();
+          if (t && !t.includes('© Meta') && !t.includes('Terms') && !t.includes('Privacy') && !t.includes('Cookie')) {
+            return t;
+          }
+        }
       }
       return null;
     });
 
-    return reply || `Live command processed by ${account.name} (Active in session).`;
+    return reply || `Live command "${promptText}" dispatched to ${account.name} (Active in session).`;
   } catch (err) {
     console.error(`Live browser execution error for ${account.name}:`, err.message);
     throw err;

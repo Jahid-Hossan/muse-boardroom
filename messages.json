@@ -6,5 +6,74 @@
     "senderName": "System",
     "text": "Executive Boardroom reset. Ready for CEO commands.",
     "timestamp": "2026-11-17T14:34:34.589Z"
+  },
+  {
+    "id": "ceo-1794926389336",
+    "sender": "ceo",
+    "role": "Chief Executive Officer",
+    "senderName": "CEO",
+    "text": "hello",
+    "fileAttachment": null,
+    "mode": "direct",
+    "targetAgentId": "agent-1794926342771",
+    "timestamp": "2026-11-17T14:39:49.336Z"
+  },
+  {
+    "id": "reply-agent-1794926342771-1794926392612-kngl",
+    "sender": "agent-1794926342771",
+    "targetAgentId": "agent-1794926342771",
+    "mode": "direct",
+    "role": "AI Agent",
+    "senderName": "Muse-1",
+    "avatar": "🐳",
+    "color": "#06B6D4",
+    "text": "© Meta 2026",
+    "timestamp": "2026-11-17T14:39:52.612Z"
+  },
+  {
+    "id": "ceo-1794926409000",
+    "sender": "ceo",
+    "role": "Chief Executive Officer",
+    "senderName": "CEO",
+    "text": "are you ok?",
+    "fileAttachment": null,
+    "mode": "direct",
+    "targetAgentId": "agent-1794926342771",
+    "timestamp": "2026-11-17T14:40:09.000Z"
+  },
+  {
+    "id": "reply-agent-1794926342771-1794926412275-w56y",
+    "sender": "agent-1794926342771",
+    "targetAgentId": "agent-1794926342771",
+    "mode": "direct",
+    "role": "AI Agent",
+    "senderName": "Muse-1",
+    "avatar": "🐳",
+    "color": "#06B6D4",
+    "text": "© Meta 2026",
+    "timestamp": "2026-11-17T14:40:12.275Z"
+  },
+  {
+    "id": "ceo-1794926454237",
+    "sender": "ceo",
+    "role": "Chief Executive Officer",
+    "senderName": "CEO",
+    "text": "hello",
+    "fileAttachment": null,
+    "mode": "direct",
+    "targetAgentId": "agent-1794926342771",
+    "timestamp": "2026-11-17T14:40:54.237Z"
+  },
+  {
+    "id": "reply-agent-1794926342771-1794926457532-pjn6",
+    "sender": "agent-1794926342771",
+    "targetAgentId": "agent-1794926342771",
+    "mode": "direct",
+    "role": "AI Agent",
+    "senderName": "Muse-1",
+    "avatar": "🐳",
+    "color": "#06B6D4",
+    "text": "© Meta 2026",
+    "timestamp": "2026-11-17T14:40:57.532Z"
   }
 ]
