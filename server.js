@@ -10,6 +10,11 @@ const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3000;
 const CONFIG_FILE = path.join(__dirname, 'config.json');
 const MESSAGES_FILE = path.join(__dirname, 'messages.json');
+const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
+
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
 
 function loadJson(file, defaultVal) {
   try {
@@ -34,10 +39,10 @@ let config = loadJson(CONFIG_FILE, {
   companyName: "CEO Command Center",
   ceoName: "CEO",
   accounts: [
-    { id: "muse-1", name: "Muse-1", role: "Chief Strategy Officer", color: "#3B82F6", avatar: "📊", provider: "browser-automation", profileDir: "profile1" },
-    { id: "muse-2", name: "Muse-2", role: "Chief Marketing Officer", color: "#EC4899", avatar: "🚀", provider: "browser-automation", profileDir: "profile2" },
-    { id: "muse-3", name: "Muse-3", role: "Chief Technology Officer", color: "#10B981", avatar: "⚙️", provider: "browser-automation", profileDir: "profile3" },
-    { id: "muse-4", name: "Muse-4", role: "Chief Operating Officer", color: "#F59E0B", avatar: "🛡️", provider: "browser-automation", profileDir: "profile4" }
+    { id: "muse-1", name: "Muse-1", role: "Chief Strategy Officer", color: "#3B82F6", avatar: "📊", provider: "browser-automation", profileDir: "profile1", apiKey: "", model: "gemini-1.5-flash", systemPrompt: "You are the Chief Strategy Officer." },
+    { id: "muse-2", name: "Muse-2", role: "Chief Marketing Officer", color: "#EC4899", avatar: "🚀", provider: "browser-automation", profileDir: "profile2", apiKey: "", model: "gemini-1.5-flash", systemPrompt: "You are the Chief Marketing Officer." },
+    { id: "muse-3", name: "Muse-3", role: "Chief Technology Officer", color: "#10B981", avatar: "⚙️", provider: "browser-automation", profileDir: "profile3", apiKey: "", model: "gemini-1.5-flash", systemPrompt: "You are the Chief Technology Officer." },
+    { id: "muse-4", name: "Muse-4", role: "Chief Operating Officer", color: "#F59E0B", avatar: "🛡️", provider: "browser-automation", profileDir: "profile4", apiKey: "", model: "gemini-1.5-flash", systemPrompt: "You are the Chief Operating Officer." }
   ]
 });
 
@@ -47,7 +52,7 @@ let messages = loadJson(MESSAGES_FILE, [
     sender: "system",
     role: "System",
     senderName: "Boardroom System",
-    text: "CEO Executive War Room online. All 4 Muse AI accounts synchronized. Enter your command below.",
+    text: "CEO Executive War Room online. All 4 accounts synchronized. Enter your command below.",
     timestamp: new Date().toISOString()
   }
 ]);
@@ -59,22 +64,102 @@ const MIME_TYPES = {
   '.json': 'application/json',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon'
 };
+
+// Call Google Gemini API
+async function callGeminiApi(agent, promptText, fileAttachment = null) {
+  const apiKey = agent.apiKey || process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing Gemini API Key. Please add your free key in Manage Accounts.");
+  }
+  const modelName = agent.model || 'gemini-1.5-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+  const parts = [];
+  if (agent.systemPrompt) {
+    parts.push({ text: `System Persona: ${agent.systemPrompt}\n\n` });
+  }
+  parts.push({ text: `Directive from CEO: ${promptText}` });
+
+  if (fileAttachment && fileAttachment.dataUrl) {
+    const match = fileAttachment.dataUrl.match(/^data:(image\/[a-zA-Z]+);base64,(.+)$/);
+    if (match) {
+      parts.push({
+        inlineData: {
+          mimeType: match[1],
+          data: match[2]
+        }
+      });
+    }
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: parts }]
+    }),
+    signal: AbortSignal.timeout(20000)
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Gemini API error: ${err.substring(0, 150)}`);
+  }
+
+  const resData = await response.json();
+  return resData.candidates?.[0]?.content?.parts?.[0]?.text || "No response received from Gemini.";
+}
+
+// Call OpenAI / Groq / Ollama API
+async function callOpenAiApi(agent, promptText) {
+  const apiKey = agent.apiKey;
+  const endpoint = agent.endpoint || 'https://api.openai.com/v1/chat/completions';
+  const modelName = agent.model || 'gpt-4o-mini';
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: modelName,
+      messages: [
+        { role: 'system', content: agent.systemPrompt || 'You are an executive assistant.' },
+        { role: 'user', content: promptText }
+      ],
+      max_tokens: 1000
+    }),
+    signal: AbortSignal.timeout(20000)
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`OpenAI API error: ${err.substring(0, 150)}`);
+  }
+
+  const resData = await response.json();
+  return resData.choices?.[0]?.message?.content || "No response received.";
+}
 
 function generateExecutiveResponse(agent, prompt, contextHistory, isRoundtable = false, previousRoundtableResponses = []) {
   const cleanPrompt = prompt.trim();
   let text = "";
 
   if (agent.id === "muse-1") {
-    text = `### 📊 Chief Strategy Officer Assessment\n**Directive:** "${cleanPrompt}"\n\n- **Strategic Evaluation:** High-priority initiative aligned with current company targets.\n- **Action Roadmap:** Setting immediate execution milestones and delegating operational tracks to Marketing (Muse-2) and Technology (Muse-3).\n- **CEO Recommendation:** Proceed with Phase 1 execution immediately.`;
+    text = `### 📊 ${agent.name} (${agent.role})\n**Directive:** "${cleanPrompt}"\n\n- **Strategic Evaluation:** High-priority initiative aligned with targets.\n- **Action Roadmap:** Setting immediate execution milestones.\n- **CEO Recommendation:** Proceed with Phase 1 execution immediately.`;
   } else if (agent.id === "muse-2") {
-    text = `### 🚀 CMO Marketing & Growth Brief\n**Directive:** "${cleanPrompt}"\n\n- **Campaign Focus:** Value proposition locked in. Brand messaging and go-to-market channels are staged.\n- **Target Metrics:** Full user acquisition blitz scheduled across primary channels.\n- **Status:** Creative assets ready for rollout upon CEO sign-off.`;
+    text = `### 🚀 ${agent.name} (${agent.role})\n**Directive:** "${cleanPrompt}"\n\n- **Campaign Focus:** Value proposition locked in. Brand messaging and go-to-market channels staged.\n- **Target Metrics:** User acquisition blitz queued.\n- **Status:** Creative assets ready for rollout upon CEO sign-off.`;
   } else if (agent.id === "muse-3") {
-    text = `### ⚙️ CTO Architectural & Feasibility Report\n**Directive:** "${cleanPrompt}"\n\n- **Systems Feasibility:** Technical architecture validated. Resource bandwidth confirmed.\n- **Infrastructure:** Core APIs and data pipelines prioritized for Sprint 1.\n- **Status:** Engineering sprint queued with zero blockers.`;
+    text = `### ⚙️ ${agent.name} (${agent.role})\n**Directive:** "${cleanPrompt}"\n\n- **Systems Feasibility:** Architecture validated. Bandwidth confirmed.\n- **Infrastructure:** Core data pipelines prioritized.\n- **Status:** Engineering sprint queued with zero blockers.`;
   } else if (agent.id === "muse-4") {
-    text = `### 🛡️ COO Execution & Operations Matrix\n**Directive:** "${cleanPrompt}"\n\n- **Operational Consensus:** Strategy, Marketing, and Tech tracks aligned.\n- **Milestones:** Day 1-7 specs, Day 8-20 rollout, Day 21+ general release.\n- **Status:** All 4 tracks ready to execute on your command.`;
+    text = `### 🛡️ ${agent.name} (${agent.role})\n**Directive:** "${cleanPrompt}"\n\n- **Operational Consensus:** All departments synchronized.\n- **Milestones:** Day 1-7 specs, Day 8-20 rollout, Day 21+ general release.\n- **Status:** All tracks ready to execute on your command.`;
   } else {
     text = `### ${agent.name} (${agent.role})\nCommand "${cleanPrompt}" acknowledged and processing.`;
   }
@@ -142,6 +227,43 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // Upload endpoint (Save uploaded screenshots or files)
+  if (pathname === '/api/upload' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => body += chunk);
+    req.on('end', () => {
+      try {
+        const { filename, dataUrl } = JSON.parse(body);
+        if (!dataUrl) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'No data URL provided' }));
+          return;
+        }
+        const match = dataUrl.match(/^data:([a-zA-Z0-9/+-]+);base64,(.+)$/);
+        if (!match) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Invalid data format' }));
+          return;
+        }
+        const ext = path.extname(filename || 'image.png') || '.png';
+        const safeName = `file-${Date.now()}-${Math.random().toString(36).substr(2, 5)}${ext}`;
+        const savePath = path.join(UPLOADS_DIR, safeName);
+        fs.writeFileSync(savePath, Buffer.from(match[2], 'base64'));
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          url: `/uploads/${safeName}`,
+          filename: filename || safeName
+        }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
   // CEO Command Dispatch Endpoint
   if (pathname === '/api/command' && req.method === 'POST') {
     let body = '';
@@ -149,7 +271,7 @@ const server = http.createServer(async (req, res) => {
     req.on('end', async () => {
       try {
         const payload = JSON.parse(body || '{}');
-        const { command, mode = 'broadcast', targetAgentId } = payload;
+        const { command, mode = 'broadcast', targetAgentId, fileAttachment } = payload;
 
         if (!command || !command.trim()) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -163,6 +285,7 @@ const server = http.createServer(async (req, res) => {
           role: "Chief Executive Officer",
           senderName: config.ceoName || "CEO",
           text: command.trim(),
+          fileAttachment: fileAttachment || null,
           mode: mode,
           timestamp: new Date().toISOString()
         };
@@ -187,11 +310,15 @@ const server = http.createServer(async (req, res) => {
         const agentReplies = [];
         const previousRoundtableResponses = [];
 
-        // Run accounts in parallel to avoid timeouts!
+        // Parallel account invocation
         const replyPromises = agentsToInvoke.map(async (agent) => {
           let replyText = "";
           try {
-            if (agent.provider === "browser-automation") {
+            if (agent.provider === "gemini") {
+              replyText = await callGeminiApi(agent, command, fileAttachment);
+            } else if (agent.provider === "openai" || agent.provider === "custom-api") {
+              replyText = await callOpenAiApi(agent, command);
+            } else if (agent.provider === "browser-automation") {
               replyText = await queryLiveMuseAccount(agent, command);
             } else {
               replyText = generateExecutiveResponse(agent, command, messages, mode === 'roundtable', previousRoundtableResponses);
@@ -199,7 +326,7 @@ const server = http.createServer(async (req, res) => {
           } catch (apiErr) {
             console.warn(`Execution notice for ${agent.name}:`, apiErr.message);
             replyText = generateExecutiveResponse(agent, command, messages, mode === 'roundtable', previousRoundtableResponses) +
-              `\n\n*(Live session note: Dispatched to ${agent.profileDir || agent.id})*`;
+              `\n\n*(Notice: ${apiErr.message})*`;
           }
 
           return {

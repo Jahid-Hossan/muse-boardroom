@@ -47,7 +47,7 @@
       font-size: 24px;
     }
     .brand-title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       color: #fff;
       display: flex;
@@ -65,9 +65,10 @@
     }
     .header-actions {
       display: flex;
+      align-items: center;
       gap: 10px;
     }
-    .btn-secondary {
+    .btn-action {
       background: #1e293b;
       color: #cbd5e1;
       border: 1px solid #334155;
@@ -76,8 +77,11 @@
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    .btn-secondary:hover {
+    .btn-action:hover {
       background: #334155;
       color: #fff;
     }
@@ -94,7 +98,7 @@
       background: rgba(239, 68, 68, 0.2);
     }
 
-    /* Main Content Layout */
+    /* Main Layout */
     .layout {
       display: flex;
       flex: 1;
@@ -104,7 +108,7 @@
 
     /* Left Sidebar */
     aside {
-      width: 260px;
+      width: 270px;
       background: #0f172a;
       border-right: 1px solid #1e293b;
       display: flex;
@@ -112,11 +116,14 @@
       flex-shrink: 0;
     }
     .sidebar-header {
-      padding: 16px;
+      padding: 14px 16px;
       border-bottom: 1px solid #1e293b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     .sidebar-header h2 {
-      font-size: 13px;
+      font-size: 12px;
       color: #94a3b8;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -136,12 +143,21 @@
       padding: 12px;
       display: flex;
       gap: 10px;
+      position: relative;
     }
     .account-avatar {
       font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
     }
     .account-info {
       flex: 1;
+      min-width: 0;
     }
     .account-name {
       font-size: 13px;
@@ -151,17 +167,41 @@
       align-items: center;
       justify-content: space-between;
     }
-    .status-dot {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #10b981;
+    .status-pill {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .status-pill.live {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .status-pill.gemini {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .status-pill.api {
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.3);
     }
     .account-role {
       font-size: 11px;
       color: #94a3b8;
       margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .account-provider {
+      font-size: 10px;
+      color: #64748b;
+      margin-top: 4px;
+      font-family: monospace;
     }
 
     /* Main Chat Section */
@@ -188,7 +228,7 @@
       border: 1px solid #1e293b;
       border-radius: 12px;
       padding: 16px;
-      max-width: 900px;
+      max-width: 950px;
       line-height: 1.6;
     }
     .msg-card.ceo {
@@ -216,41 +256,107 @@
       color: #fff;
       margin: 8px 0 4px 0;
     }
-    .msg-body p {
-      margin-bottom: 6px;
+    .msg-attachment {
+      margin-top: 10px;
+      max-width: 320px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #334155;
     }
-    .msg-body ul {
-      margin-left: 20px;
-      margin-bottom: 6px;
+    .msg-attachment img {
+      width: 100%;
+      display: block;
     }
 
-    /* Bottom Input Bar - Fixed and Pinpoint Visible */
+    /* Bottom Command Bar */
     #inputBar {
       flex-shrink: 0;
       background: #0f172a;
       border-top: 2px solid #334155;
-      padding: 16px 24px;
+      padding: 14px 20px;
       width: 100%;
       z-index: 50;
     }
+    .attachment-preview {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      padding: 6px 12px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      width: fit-content;
+    }
+    .attachment-preview.active {
+      display: flex;
+    }
+    .attachment-preview img {
+      height: 36px;
+      border-radius: 4px;
+    }
+    .attachment-preview .filename {
+      font-size: 12px;
+      color: #cbd5e1;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .attachment-preview .remove-btn {
+      color: #ef4444;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      padding: 0 4px;
+    }
+
     .input-wrapper {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
       width: 100%;
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
+    }
+    .tool-btn {
+      width: 48px;
+      height: 48px;
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #cbd5e1;
+      border-radius: 10px;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+    .tool-btn:hover {
+      background: #334155;
+      color: #fff;
+    }
+    .tool-btn.recording {
+      background: #dc2626;
+      color: #fff;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1); }
     }
     #commandInput {
       flex: 1;
       width: 100%;
-      height: 52px;
+      height: 48px;
       background: #1e293b;
       border: 2px solid #475569;
       border-radius: 10px;
       color: #fff;
-      font-size: 15px;
-      padding: 14px 18px;
+      font-size: 14px;
+      padding: 12px 16px;
       outline: none;
       font-family: inherit;
     }
@@ -259,21 +365,17 @@
       background: #243047;
     }
     #sendBtn {
-      height: 52px;
-      padding: 0 28px;
+      height: 48px;
+      padding: 0 24px;
       background: #f59e0b;
       color: #000;
       border: none;
       border-radius: 10px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
       flex-shrink: 0;
     }
     #sendBtn:hover {
@@ -285,15 +387,146 @@
     }
     .status-indicator {
       display: none;
-      padding: 8px 24px;
+      padding: 6px 20px;
       background: #1e293b;
       border-top: 1px solid #334155;
-      font-size: 12px;
+      font-size: 11px;
       color: #f59e0b;
       text-align: center;
     }
     .status-indicator.active {
       display: block;
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-content {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 680px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #1e293b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #131b2e;
+    }
+    .modal-header h3 {
+      font-size: 15px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .modal-tabs {
+      display: flex;
+      background: #0b0f19;
+      border-bottom: 1px solid #1e293b;
+      padding: 0 16px;
+      gap: 6px;
+    }
+    .tab-btn {
+      padding: 10px 14px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: #94a3b8;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      color: #f59e0b;
+      border-bottom-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.05);
+    }
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #94a3b8;
+      letter-spacing: 0.05em;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: #f59e0b;
+    }
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid #1e293b;
+      background: #131b2e;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn-save {
+      background: #f59e0b;
+      color: #000;
+      font-weight: 700;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .btn-save:hover {
+      background: #fbbf24;
     }
   </style>
 </head>
@@ -301,16 +534,17 @@
 
   <div id="app">
 
-    <!-- Top Header -->
+    <!-- Header -->
     <header>
       <div class="brand">
         <span class="brand-logo">👑</span>
         <div class="brand-title">
           MUSE AI CEO COMMAND CENTER
-          <span class="badge">4 Accounts Active</span>
+          <span class="badge">4 Accounts Online</span>
         </div>
       </div>
       <div class="header-actions">
+        <button class="btn-action" onclick="openConfigModal()">⚙️ Manage & Configure Accounts</button>
         <button class="btn-danger" onclick="clearBoardroom()">Clear Chat</button>
       </div>
     </header>
@@ -318,40 +552,13 @@
     <!-- Main Layout -->
     <div class="layout">
 
-      <!-- Left Sidebar: 4 Accounts -->
+      <!-- Left Sidebar -->
       <aside>
         <div class="sidebar-header">
-          <h2>Connected Accounts (4)</h2>
+          <h2>Active Accounts (4)</h2>
         </div>
         <div class="account-list" id="agentRoster">
-          <div class="account-card">
-            <span class="account-avatar">📊</span>
-            <div class="account-info">
-              <div class="account-name">Muse-1 <span class="status-dot"></span></div>
-              <div class="account-role">Chief Strategy Officer</div>
-            </div>
-          </div>
-          <div class="account-card">
-            <span class="account-avatar">🚀</span>
-            <div class="account-info">
-              <div class="account-name">Muse-2 <span class="status-dot"></span></div>
-              <div class="account-role">Chief Marketing Officer</div>
-            </div>
-          </div>
-          <div class="account-card">
-            <span class="account-avatar">⚙️</span>
-            <div class="account-info">
-              <div class="account-name">Muse-3 <span class="status-dot"></span></div>
-              <div class="account-role">Chief Technology Officer</div>
-            </div>
-          </div>
-          <div class="account-card">
-            <span class="account-avatar">🛡️</span>
-            <div class="account-info">
-              <div class="account-name">Muse-4 <span class="status-dot"></span></div>
-              <div class="account-role">Chief Operating Officer</div>
-            </div>
-          </div>
+          <!-- Rendered by JS -->
         </div>
       </aside>
 
@@ -362,18 +569,41 @@
         </div>
 
         <div id="statusIndicator" class="status-indicator">
-          ⏳ 4 Muse AI accounts are analyzing your CEO directive...
+          ⏳ Accounts are processing your CEO directive...
         </div>
 
-        <!-- The Command Input Bar -->
+        <!-- The Input Bar -->
         <div id="inputBar">
+          <!-- Attachment Preview -->
+          <div id="attachmentPreview" class="attachment-preview">
+            <img id="previewImg" src="" alt="preview" />
+            <span id="previewName" class="filename">screenshot.png</span>
+            <span class="remove-btn" onclick="clearAttachment()" title="Remove file">✕</span>
+          </div>
+
           <div class="input-wrapper">
+            <!-- Hidden File Input -->
+            <input type="file" id="filePicker" accept="image/*,.pdf,.txt" style="display: none;" onchange="handleFileSelect(event)">
+            
+            <!-- File Attachment Button (📎) -->
+            <button class="tool-btn" onclick="document.getElementById('filePicker').click()" title="Upload Screenshot or File">
+              📎
+            </button>
+
+            <!-- Voice Dictation Button (🎙️) -->
+            <button class="tool-btn" id="micBtn" onclick="toggleVoiceDictation()" title="Voice Dictation (Bangla / English)">
+              🎙️
+            </button>
+
+            <!-- Text Input -->
             <input 
               type="text" 
               id="commandInput" 
-              placeholder="👑 Type CEO Directive here and press Enter (or click Send)..." 
+              placeholder="👑 Type CEO Directive or paste screenshot (Ctrl+V)..." 
               autocomplete="off"
             />
+
+            <!-- Send Button -->
             <button id="sendBtn" onclick="sendCommand()">
               SEND
             </button>
@@ -385,11 +615,42 @@
 
   </div>
 
-  <script>
-    let isSending = false;
+  <!-- ACCOUNTS CONFIGURATION MODAL -->
+  <div id="configModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>⚙️ Configure 4 AI Accounts (Muse, Gemini, OpenAI)</h3>
+        <button class="modal-close" onclick="closeConfigModal()">✕</button>
+      </div>
 
-    document.addEventListener('DOMContentLoaded', () => {
-      loadMessages();
+      <div class="modal-tabs" id="modalTabs">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="modal-body" id="modalForm">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="modal-footer">
+        <span style="font-size: 11px; color: #94a3b8;">Supports Muse Browser Profiles, Gemini API, or OpenAI endpoints.</span>
+        <button class="btn-save" onclick="saveCurrentAccountConfig()">Save & Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let appConfig = null;
+    let activeTabId = 'muse-1';
+    let currentAttachment = null;
+    let isSending = false;
+    let speechRecognition = null;
+    let isRecording = false;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadConfig();
+      await loadMessages();
+      setupClipboardPaste();
+
       const input = document.getElementById('commandInput');
       if (input) {
         input.addEventListener('keydown', (e) => {
@@ -402,13 +663,63 @@
       }
     });
 
+    // Load Configuration
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config');
+        appConfig = await res.json();
+        renderRoster();
+      } catch (err) {
+        console.error("Config load error:", err);
+      }
+    }
+
+    // Render 4 Accounts in Sidebar
+    function renderRoster() {
+      const roster = document.getElementById('agentRoster');
+      if (!roster || !appConfig || !appConfig.accounts) return;
+      roster.innerHTML = '';
+
+      appConfig.accounts.forEach(agent => {
+        const card = document.createElement('div');
+        card.className = 'account-card';
+        
+        let pillClass = 'live';
+        let pillText = 'MUSE PROFILE';
+        if (agent.provider === 'gemini') {
+          pillClass = 'gemini';
+          pillText = 'GEMINI';
+        } else if (agent.provider === 'openai' || agent.provider === 'custom-api') {
+          pillClass = 'api';
+          pillText = 'OPENAI API';
+        } else if (agent.provider === 'simulation') {
+          pillClass = 'live';
+          pillText = 'SIMULATION';
+        }
+
+        card.innerHTML = `
+          <div class="account-avatar">${agent.avatar || '🤖'}</div>
+          <div class="account-info">
+            <div class="account-name">
+              <span>${agent.name}</span>
+              <span class="status-pill ${pillClass}">${pillText}</span>
+            </div>
+            <div class="account-role">${agent.role}</div>
+            <div class="account-provider">${agent.provider === 'browser-automation' ? (agent.profileDir || 'profile') : (agent.model || agent.provider)}</div>
+          </div>
+        `;
+        roster.appendChild(card);
+      });
+    }
+
+    // Load and Render Messages
     async function loadMessages() {
       try {
         const res = await fetch('/api/messages');
         const msgs = await res.json();
         renderMessages(msgs);
       } catch (err) {
-        console.error("Failed to load messages:", err);
+        console.error("Messages load error:", err);
       }
     }
 
@@ -429,6 +740,13 @@
         body.className = 'msg-body';
         body.innerHTML = window.marked ? marked.parse(msg.text) : msg.text;
 
+        if (msg.fileAttachment && msg.fileAttachment.dataUrl) {
+          const attachDiv = document.createElement('div');
+          attachDiv.className = 'msg-attachment';
+          attachDiv.innerHTML = `<a href="${msg.fileAttachment.dataUrl}" target="_blank"><img src="${msg.fileAttachment.dataUrl}" alt="attachment" /></a>`;
+          body.appendChild(attachDiv);
+        }
+
         card.appendChild(header);
         card.appendChild(body);
         feed.appendChild(card);
@@ -437,6 +755,7 @@
       feed.scrollTop = feed.scrollHeight;
     }
 
+    // Send Command
     async function sendCommand() {
       if (isSending) return;
       const input = document.getElementById('commandInput');
@@ -444,20 +763,27 @@
       const indicator = document.getElementById('statusIndicator');
 
       const text = input ? input.value.trim() : '';
-      if (!text) return;
+      if (!text && !currentAttachment) return;
 
       isSending = true;
       if (sendBtn) sendBtn.disabled = true;
       if (indicator) indicator.classList.add('active');
 
       try {
+        const payload = {
+          command: text || "Analyze attached file/screenshot.",
+          mode: 'broadcast',
+          fileAttachment: currentAttachment
+        };
+
         const res = await fetch('/api/command', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command: text, mode: 'broadcast' })
+          body: JSON.stringify(payload)
         });
-        const data = await res.json();
+
         if (input) input.value = '';
+        clearAttachment();
         await loadMessages();
       } catch (err) {
         console.error("Send error:", err);
@@ -469,8 +795,241 @@
       }
     }
 
+    // File Upload Handling
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        currentAttachment = {
+          filename: file.name,
+          dataUrl: event.target.result
+        };
+        showAttachmentPreview(file.name, event.target.result);
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    }
+
+    function setupClipboardPaste() {
+      window.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (const item of items) {
+          if (item.type.indexOf('image') !== -1) {
+            const blob = item.getAsFile();
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              currentAttachment = {
+                filename: 'screenshot.png',
+                dataUrl: event.target.result
+              };
+              showAttachmentPreview('Pasted Screenshot.png', event.target.result);
+            };
+            reader.readAsDataURL(blob);
+            break;
+          }
+        }
+      });
+    }
+
+    function showAttachmentPreview(name, dataUrl) {
+      const preview = document.getElementById('attachmentPreview');
+      const img = document.getElementById('previewImg');
+      const nameEl = document.getElementById('previewName');
+      if (preview && img && nameEl) {
+        img.src = dataUrl;
+        nameEl.textContent = name;
+        preview.classList.add('active');
+      }
+    }
+
+    function clearAttachment() {
+      currentAttachment = null;
+      const preview = document.getElementById('attachmentPreview');
+      if (preview) preview.classList.remove('active');
+    }
+
+    // Voice Dictation (Web Speech API)
+    function toggleVoiceDictation() {
+      const micBtn = document.getElementById('micBtn');
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        alert("Your browser does not support Web Speech Recognition. Please use Google Chrome or Microsoft Edge.");
+        return;
+      }
+
+      if (isRecording) {
+        if (speechRecognition) speechRecognition.stop();
+        return;
+      }
+
+      speechRecognition = new SpeechRecognition();
+      speechRecognition.continuous = false;
+      speechRecognition.interimResults = false;
+      speechRecognition.lang = 'bn-BD'; // Supports Bangla or en-US
+
+      speechRecognition.onstart = () => {
+        isRecording = true;
+        if (micBtn) micBtn.classList.add('recording');
+      };
+
+      speechRecognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        const input = document.getElementById('commandInput');
+        if (input) {
+          input.value = (input.value ? input.value + ' ' : '') + transcript;
+          input.focus();
+        }
+      };
+
+      speechRecognition.onerror = (event) => {
+        console.warn("Speech recognition error:", event.error);
+        // Fallback to English if Bangla is not supported on OS
+        if (event.error === 'language-not-supported') {
+          speechRecognition.lang = 'en-US';
+          speechRecognition.start();
+        }
+      };
+
+      speechRecognition.onend = () => {
+        isRecording = false;
+        if (micBtn) micBtn.classList.remove('recording');
+      };
+
+      speechRecognition.start();
+    }
+
+    // MODAL CONFIGURATION LOGIC
+    function openConfigModal(tabId = 'muse-1') {
+      activeTabId = tabId;
+      renderModalTabs();
+      renderModalForm();
+      const modal = document.getElementById('configModal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeConfigModal() {
+      const modal = document.getElementById('configModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function renderModalTabs() {
+      const tabs = document.getElementById('modalTabs');
+      if (!tabs || !appConfig || !appConfig.accounts) return;
+      tabs.innerHTML = '';
+
+      appConfig.accounts.forEach(a => {
+        const btn = document.createElement('button');
+        btn.className = `tab-btn ${a.id === activeTabId ? 'active' : ''}`;
+        btn.innerHTML = `${a.avatar || '🤖'} ${a.name}`;
+        btn.onclick = () => {
+          activeTabId = a.id;
+          renderModalTabs();
+          renderModalForm();
+        };
+        tabs.appendChild(btn);
+      });
+    }
+
+    function renderModalForm() {
+      const form = document.getElementById('modalForm');
+      if (!form || !appConfig || !appConfig.accounts) return;
+      const agent = appConfig.accounts.find(a => a.id === activeTabId);
+      if (!agent) return;
+
+      form.innerHTML = `
+        <div class="form-row">
+          <div class="form-group">
+            <label>Account Name</label>
+            <input type="text" id="cfgName" value="${agent.name}">
+          </div>
+          <div class="form-group">
+            <label>Role / Job Title</label>
+            <input type="text" id="cfgRole" value="${agent.role}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>AI Provider</label>
+          <select id="cfgProvider" onchange="handleProviderChange()">
+            <option value="browser-automation" ${agent.provider === 'browser-automation' ? 'selected' : ''}>🌐 Muse AI (Live Browser Profile 1-4)</option>
+            <option value="gemini" ${agent.provider === 'gemini' ? 'selected' : ''}>⚡ Google Gemini API (Free Key)</option>
+            <option value="openai" ${agent.provider === 'openai' ? 'selected' : ''}>🧠 OpenAI / ChatGPT / Groq / Ollama</option>
+            <option value="simulation" ${agent.provider === 'simulation' ? 'selected' : ''}>🛡️ Local Simulation (Offline Engine)</option>
+          </select>
+        </div>
+
+        <div id="apiOptions" style="display: ${agent.provider === 'gemini' || agent.provider === 'openai' ? 'flex' : 'none'}; flex-direction: column; gap: 12px;">
+          <div class="form-group">
+            <label>API Key</label>
+            <input type="password" id="cfgApiKey" value="${agent.apiKey || ''}" placeholder="Enter Gemini or OpenAI API Key">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Model Name</label>
+              <input type="text" id="cfgModel" value="${agent.model || (agent.provider === 'gemini' ? 'gemini-1.5-flash' : 'gpt-4o-mini')}" placeholder="e.g. gemini-1.5-flash">
+            </div>
+            <div class="form-group">
+              <label>Custom Endpoint (Optional)</label>
+              <input type="text" id="cfgEndpoint" value="${agent.endpoint || ''}" placeholder="Leave blank for official API">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Executive System Instructions / Persona</label>
+          <textarea id="cfgPrompt" rows="3">${agent.systemPrompt || ''}</textarea>
+        </div>
+      `;
+    }
+
+    function handleProviderChange() {
+      const provider = document.getElementById('cfgProvider').value;
+      const apiOptions = document.getElementById('apiOptions');
+      if (apiOptions) {
+        apiOptions.style.display = (provider === 'gemini' || provider === 'openai') ? 'flex' : 'none';
+      }
+    }
+
+    async function saveCurrentAccountConfig() {
+      const agent = appConfig.accounts.find(a => a.id === activeTabId);
+      if (!agent) return;
+
+      agent.name = document.getElementById('cfgName').value.trim() || agent.name;
+      agent.role = document.getElementById('cfgRole').value.trim() || agent.role;
+      agent.provider = document.getElementById('cfgProvider').value;
+      agent.systemPrompt = document.getElementById('cfgPrompt').value.trim();
+
+      const apiKey = document.getElementById('cfgApiKey');
+      if (apiKey) agent.apiKey = apiKey.value.trim();
+
+      const model = document.getElementById('cfgModel');
+      if (model) agent.model = model.value.trim();
+
+      const endpoint = document.getElementById('cfgEndpoint');
+      if (endpoint) agent.endpoint = endpoint.value.trim();
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(appConfig)
+        });
+        const data = await res.json();
+        if (data.success) {
+          closeConfigModal();
+          renderRoster();
+          alert(`Configuration for ${agent.name} saved successfully!`);
+        }
+      } catch (err) {
+        console.error("Config save error:", err);
+      }
+    }
+
     async function clearBoardroom() {
-      if (!confirm("Are you sure you want to clear chat history?")) return;
+      if (!confirm("Are you sure you want to clear the boardroom chat?")) return;
       try {
         await fetch('/api/messages', { method: 'DELETE' });
         await loadMessages();
